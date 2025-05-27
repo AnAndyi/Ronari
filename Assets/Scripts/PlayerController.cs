@@ -1,11 +1,9 @@
-using Assets.Scripts;
+﻿using Assets.Scripts;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEngine;
 using UnityEngine.InputSystem;
-
 
 [RequireComponent(typeof(Rigidbody2D), typeof(TouchingDirections), typeof(Damageable))]
 public class PlayerController : MonoBehaviour
@@ -35,7 +33,9 @@ public class PlayerController : MonoBehaviour
     Vector2 moveInput;
     TouchingDirections touchingDirections;
     Damageable damageable;
-    public float CurrentMoveSpeed { get
+    public float CurrentMoveSpeed
+    {
+        get
         {
             if (CanMove)
             {
@@ -73,67 +73,58 @@ public class PlayerController : MonoBehaviour
     }
 
     [SerializeField]
-    private bool _isMoving = false;
+    private bool isMoving = false;
     public bool IsMoving
     {
-        get
-        {
-            return _isMoving;
-        }
+        get { return isMoving; }
         private set
         {
-            _isMoving = value;
-            animator.SetBool(AnimationStrings.isMoving, value);
+            isMoving = value;
+            if (animator != null) animator.SetBool(AnimationStrings.isMoving, value);
         }
     }
 
     [SerializeField]
-    private bool _isRunning = false;
+    private bool isRunning = false;
 
     public bool IsRunning
     {
-        get
-        {
-            return _isRunning;
-        }
+        get { return isRunning; }
         set
         {
-            _isRunning = value;
-            animator.SetBool(AnimationStrings.isRunning, value);
+            isRunning = value;
+            if (animator != null) animator.SetBool(AnimationStrings.isRunning, value);
         }
     }
 
-    public bool _isFacingRight = true;
+    public bool isFacingRight = true;
 
-    public bool IsFacingRight { get { return _isFacingRight; } private set {
-             if(_isFacingRight != value)
-             {
-                // Flip the local scale to make the player face the opposire direction
+    public bool IsFacingRight
+    {
+        get { return isFacingRight; }
+        private set
+        {
+            if (isFacingRight != value)
+            {
+                // Flip the local scale to make the player face the opposite direction
                 transform.localScale *= new Vector2(-1, 1);
-             } 
-        _isFacingRight = value;
-        
-        } }
+            }
+            isFacingRight = value;
+        }
+    }
+
     public bool CanMove
     {
-        get
-        {
-            return animator.GetBool(AnimationStrings.canMove);
-        }
+        get { return animator != null && animator.GetBool(AnimationStrings.canMove); }
     }
 
     public bool IsAlive
     {
-        get 
-        {
-            return animator.GetBool(AnimationStrings.isAlive);
-
-        }
+        get { return animator != null && animator.GetBool(AnimationStrings.isAlive); }
     }
 
     Rigidbody2D rb;
-    Animator animator;
-    
+    private Animator animator;
 
     private void Awake()
     {
@@ -161,9 +152,10 @@ public class PlayerController : MonoBehaviour
             }
         }
         // Set initial state
-        normalCollider.enabled = true;
-        slideCollider.enabled = false;
+        if (normalCollider != null) normalCollider.enabled = true;
+        if (slideCollider != null) slideCollider.enabled = false;
     }
+
     private void FixedUpdate()
     {
         if (!damageable.LockVelocity)
@@ -175,12 +167,18 @@ public class PlayerController : MonoBehaviour
                 rb.velocity = new Vector2(slideDirection * slideSpeed, rb.velocity.y);
                 slideTimer -= Time.fixedDeltaTime;
 
-                if (slideTimer <= 0f)
+                // 如果不在隧道内（IsOnCeiling为false）且时间结束，结束slide
+                if (!touchingDirections.IsOnCeiling && slideTimer <= 0f)
                 {
                     EndSlide();
                 }
+                // 如果在隧道内（IsOnCeiling为true），保持slide状态和动画
+                else if (touchingDirections.IsOnCeiling)
+                {
+                    if (animator != null) animator.SetBool(AnimationStrings.isSliding, true);
+                }
             }
-            if (isDodging)
+            else if (isDodging)
             {
                 float dodgeDirection = IsFacingRight ? 1f : -1f;
                 rb.velocity = new Vector2(dodgeDirection * dodgeSpeed, rb.velocity.y);
@@ -191,14 +189,15 @@ public class PlayerController : MonoBehaviour
                     EndDodge();
                 }
             }
-            else if (!isSliding) // Make sure dodging takes priority over sliding
+            else
             {
                 rb.velocity = new Vector2(moveInput.x * CurrentMoveSpeed, rb.velocity.y);
             }
         }
-        animator.SetFloat(AnimationStrings.yVelocity, rb.velocity.y);
-        
+
+        if (animator != null) animator.SetFloat(AnimationStrings.yVelocity, rb.velocity.y);
     }
+
     private void Update()
     {
         // Reset jump count when grounded
@@ -216,26 +215,25 @@ public class PlayerController : MonoBehaviour
     {
         moveInput = context.ReadValue<Vector2>();
 
-        if(IsAlive)
+        if (IsAlive)
         {
             IsMoving = moveInput != Vector2.zero;
-
             SetFacingDirection(moveInput);
         }
         else
         {
             IsMoving = false;
-        }     
+        }
     }
 
     private void SetFacingDirection(Vector2 moveInput)
     {
-        if(moveInput.x > 0 && !IsFacingRight)
+        if (moveInput.x > 0 && !IsFacingRight)
         {
             // Face the right
             IsFacingRight = true;
         }
-        else if(moveInput.x < 0 && IsFacingRight)
+        else if (moveInput.x < 0 && IsFacingRight)
         {
             // Face the left
             IsFacingRight = false;
@@ -253,26 +251,21 @@ public class PlayerController : MonoBehaviour
             IsRunning = false;
         }
     }
+
     public void OnJump(InputAction.CallbackContext context)
     {
         // Also check alive
-        if (context.started && CanMove)
+        if (context.started && CanMove && jumpCount < maxJumps)
         {
-            while(jumpCount < maxJumps)
-            {
-                animator.SetTrigger(AnimationStrings.jumpTrigger);
-                rb.velocity = new Vector2(rb.velocity.x, jumpImpulse);
-                jumpCount++;
-                if (jumpCount == maxJumps)
-                {
-                    break;
-                }
-            }           
+            if (animator != null) animator.SetTrigger(AnimationStrings.jumpTrigger);
+            rb.velocity = new Vector2(rb.velocity.x, jumpImpulse);
+            jumpCount++;
         }
     }
+
     public void OnSlide(InputAction.CallbackContext context)
     {
-        if (context.started && touchingDirections.IsGrounded && IsAlive && !isSliding && CanMove)
+        if (context.started && touchingDirections.IsGrounded && IsAlive && !isSliding && !isDodging)
         {
             StartSlide();
         }
@@ -282,30 +275,44 @@ public class PlayerController : MonoBehaviour
     {
         isSliding = true;
         slideTimer = slideDuration;
-        animator.SetBool(AnimationStrings.isSliding, true);
         if (normalCollider != null && slideCollider != null)
         {
             normalCollider.enabled = false;
             slideCollider.enabled = true;
+            Debug.Log("Switched to SlideCollider");
+        }
+        if (animator != null)
+        {
+            animator.SetBool(AnimationStrings.isSliding, true);
+            Debug.Log("Slide animation started");
         }
     }
+
     private void EndSlide()
     {
-        isSliding = false;
-        animator.SetBool(AnimationStrings.isSliding, false);
-        if (normalCollider != null && slideCollider != null)
+        // 仅在离开隧道时调用，避免反复切换
+        if (!touchingDirections.IsOnCeiling)
         {
-            normalCollider.enabled = true;
-            slideCollider.enabled = false;
+            isSliding = false;
+            if (normalCollider != null && slideCollider != null)
+            {
+                normalCollider.enabled = true;
+                slideCollider.enabled = false;
+                Debug.Log("Switched to NormalCollider");
+            }
+            if (animator != null)
+            {
+                animator.SetBool(AnimationStrings.isSliding, false);
+                Debug.Log("Slide animation ended");
+            }
         }
     }
 
     public void OnAttack(InputAction.CallbackContext context)
     {
-        if(context.started)
+        if (context.started)
         {
-            animator.SetTrigger(AnimationStrings.attackTrigger);
-            
+            if (animator != null) animator.SetTrigger(AnimationStrings.attackTrigger);
         }
     }
 
@@ -313,14 +320,13 @@ public class PlayerController : MonoBehaviour
     {
         if (context.started)
         {
-            animator.SetTrigger(AnimationStrings.rangedAttackTrigger);
+            if (animator != null) animator.SetTrigger(AnimationStrings.rangedAttackTrigger);
         }
     }
 
     public void OnHit(int damage, Vector2 knockback)
-    {      
-        rb.velocity = new Vector2(knockback.x,rb.velocity.y + knockback.y);
-               
+    {
+        rb.velocity = new Vector2(knockback.x, rb.velocity.y + knockback.y);
     }
 
     public void OnDodge(InputAction.CallbackContext context)
@@ -331,6 +337,7 @@ public class PlayerController : MonoBehaviour
             dodgeCooldownTimer = dodgeCooldown;
         }
     }
+
     public void StartDodge()
     {
         isDodging = true;
@@ -342,8 +349,7 @@ public class PlayerController : MonoBehaviour
         if (animator != null)
         {
             animator.SetTrigger(AnimationStrings.dodgeTrigger);
-            
-        }       
+        }
     }
 
     public void EndDodge()
@@ -353,7 +359,5 @@ public class PlayerController : MonoBehaviour
         {
             invincibilityController.EndInvincibility();
         }
-        
     }
-
 }

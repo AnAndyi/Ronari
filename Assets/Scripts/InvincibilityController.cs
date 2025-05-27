@@ -19,7 +19,7 @@ public class InvincibilityController : MonoBehaviour
     {
         isInvincible = true;
         invincibilityTimer = duration >= 0f ? duration : invincibilityDuration;
-        Debug.Log($"{gameObject.name} is now invincible for {invincibilityTimer}s");
+        
     }
 
     // End invincibility
@@ -27,7 +27,7 @@ public class InvincibilityController : MonoBehaviour
     {
         isInvincible = false;
         invincibilityTimer = 0f;
-        Debug.Log($"{gameObject.name} is no longer invincible");
+        
     }
 
     private void Update()

@@ -566,8 +566,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   soundToPlay: {fileID: 8300000, guid: 4d2f44879419ec945ae08adc6553bb86, type: 3}
-  volume: 100
-  playOnEnter: 0
+  volume: 300
+  playOnEnter: 1
   playOnExit: 0
   playAfterDelay: 1
   playDelay: 0.42
@@ -888,6 +888,24 @@ AnimatorState:
   m_MirrorParameter: 
   m_CycleOffsetParameter: 
   m_TimeParameter: 
+--- !u!114 &-1933724768790266010
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a39d4d89ed4981c4aaa2b5b0143d0ed1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  soundToPlay: {fileID: 8300000, guid: d55da1579bda3d04590fd88e0024a408, type: 3}
+  volume: 0.5
+  playOnEnter: 1
+  playOnExit: 0
+  playAfterDelay: 1
+  playDelay: 0.25
 --- !u!1109 &-1523192944421752452
 AnimatorTransition:
   m_ObjectHideFlags: 1
@@ -919,24 +937,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   soundToPlay: {fileID: 8300000, guid: f55a8f74afc54e947a1830b841569fac, type: 3}
   volume: 100
-  playOnEnter: 1
-  playOnExit: 0
-  playAfterDelay: 0
-  playDelay: 0.25
---- !u!114 &-1160003894400725854
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a39d4d89ed4981c4aaa2b5b0143d0ed1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  soundToPlay: {fileID: 8300000, guid: cbe86728113af594b8aaa1223d3bcddd, type: 3}
-  volume: 3
   playOnEnter: 1
   playOnExit: 0
   playAfterDelay: 0
@@ -1467,7 +1467,7 @@ AnimatorState:
   m_Transitions:
   - {fileID: 2166745036491469523}
   m_StateMachineBehaviours:
-  - {fileID: -1160003894400725854}
+  - {fileID: -1933724768790266010}
   m_Position: {x: 50, y: 50, z: 0}
   m_IKOnFeet: 0
   m_WriteDefaultValues: 1
@@ -2046,8 +2046,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boolName: canMove
-  updateOnState: 0
-  updateOnStateMachine: 1
+  updateOnState: 1
+  updateOnStateMachine: 0
   valueOnEnter: 0
   valueOnExit: 1
 --- !u!1102 &6883971522898271996

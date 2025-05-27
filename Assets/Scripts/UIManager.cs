@@ -2,17 +2,22 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
 public class UIManager : MonoBehaviour
 {
     public GameObject damageTextPrefab;
     public GameObject healthTextPrefab;
+    public GameObject manaTextPrefab; // 新增蓝量文本预制件
     public Canvas gameCanvas;
     [SerializeField] private GameObject player;
     //Player GameObject reference, can be set in the Inspector
     private Damageable playerDamageable;// The player's Damageable component
+    private int lastMana = -1; // 记录上一次蓝量
+    private float manaTextTimer = 0f;
+    private int accumulatedManaChange = 0;
+    [SerializeField] private float manaTextInterval = 2f; // 每2秒显示一次
+    [SerializeField] private int manaTextThreshold = 5; // 累计5点变化时显示
 
     private void Awake()
     {
@@ -33,22 +38,53 @@ public class UIManager : MonoBehaviour
             {
                 Debug.LogError("UIManager: Damageable component not found on player!");
             }
+            else
+            {
+                lastMana = playerDamageable.Mana; // 初始化上一次蓝量
+            }
         }
-
     }
 
     private void OnEnable()
     {
-        CharacterEvents.characterDamaged += (CharacterTookDamage);
-        CharacterEvents.characterHealed += (CharacterHealed);
+        CharacterEvents.characterDamaged += CharacterTookDamage;
+        CharacterEvents.characterHealed += CharacterHealed;
+        if (playerDamageable != null)
+        {
+            playerDamageable.manaChanged.AddListener(OnPlayerManaChanged);
+        }
     }
 
     private void OnDisable()
     {
-        CharacterEvents.characterDamaged -= (CharacterTookDamage);
-        CharacterEvents.characterHealed -= (CharacterHealed);
+        CharacterEvents.characterDamaged -= CharacterTookDamage;
+        CharacterEvents.characterHealed -= CharacterHealed;
+        if (playerDamageable != null)
+        {
+            playerDamageable.manaChanged.RemoveListener(OnPlayerManaChanged);
+        }
     }
 
+    private void Update()
+    {
+        if (accumulatedManaChange > 0)
+        {
+            manaTextTimer += Time.deltaTime;
+            if (accumulatedManaChange >= manaTextThreshold || manaTextTimer >= manaTextInterval)
+            {
+                if (player != null)
+                {
+                    Vector3 spawnPosition = Camera.main.WorldToScreenPoint(player.transform.position);
+                    ManaText manaText = Instantiate(manaTextPrefab, spawnPosition, Quaternion.identity, gameCanvas.transform)
+                        .GetComponent<ManaText>();
+                    manaText.SetText(accumulatedManaChange);
+                    accumulatedManaChange = 0;
+                    manaTextTimer = 0f;
+                    Canvas.ForceUpdateCanvases();
+                }
+            }
+        }
+    }
 
     public void CharacterTookDamage(GameObject character, int damageReceived)
     {
@@ -72,30 +108,50 @@ public class UIManager : MonoBehaviour
         tmpText.text = healthRestored.ToString();
     }
 
-    public void OnExitGame(InputAction.CallbackContext context)
+    // 新方法：显示“蓝量已耗尽”
+    public void ShowManaDepletedMessage(GameObject character)
     {
-        if(context.started)
-        {
-            #if (UNITY_EDITOR || DEVELOPMENT_BUILD)
-                        Debug.Log(this.name + " : " + this.GetType() + " : " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-            #endif
+        Vector3 spawnPosition = Camera.main.WorldToScreenPoint(character.transform.position);
+        ManaText manaText = Instantiate(manaTextPrefab, spawnPosition, Quaternion.identity, gameCanvas.transform)
+            .GetComponent<ManaText>();
+        manaText.SetText("Mana has been exhausted");
+    }
 
-            #if (UNITY_EDITOR)
-                        UnityEditor.EditorApplication.isPlaying = false;
-            #elif (UNITY_STANDALONE)
-                                        Application.Quit();
-            #elif (UNITY_WEBGL)
-                                        SceneManager.LoadScene("QuitScene");
-            #endif
+    private void OnPlayerManaChanged(int newMana, int maxMana)
+    {
+        if (playerDamageable != null && lastMana >= 0)
+        {
+            int manaChange = newMana - lastMana;
+            lastMana = newMana;
+
+            if (manaChange > 0 && newMana < maxMana)
+            {
+                accumulatedManaChange += manaChange;
+            }
         }
     }
-    // Added restart input processing
-    public void OnRestart(InputAction.CallbackContext context)
+
+    public void OnExitGame()
     {
-        if (context.started && playerDamageable != null && !playerDamageable.IsAlive)
+#if (UNITY_EDITOR || DEVELOPMENT_BUILD)
+        Debug.Log(this.name + " : " + this.GetType() + " : " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+#endif
+
+#if (UNITY_EDITOR)
+        UnityEditor.EditorApplication.isPlaying = false;
+#elif (UNITY_STANDALONE)
+            Application.Quit();
+#elif (UNITY_WEBGL)
+            SceneManager.LoadScene("QuitScene");
+#endif
+    }
+
+    public void OnRestart()
+    {
+        if (playerDamageable != null && !playerDamageable.IsAlive)
         {
             RestartGame();
-            Debug.Log("Restart key pressed, restarting game");
+            Debug.Log("Restart triggered, restarting game");
         }
     }
 

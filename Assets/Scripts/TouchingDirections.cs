@@ -1,4 +1,4 @@
-using Assets.Scripts;
+﻿using Assets.Scripts;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,8 +8,8 @@ public class TouchingDirections : MonoBehaviour
     public ContactFilter2D castFilter;
     public float groundDistance = 0.05f;
     public float wallDistance = 0.2f;
-    public float ceilingDistance = 0.05f;
-
+    [SerializeField] public float ceilingDistance = 0.1f;
+    // Adjust to be slightly larger than the SlideCollider height
     private CapsuleCollider2D touchingCol; // Default collider for this GameObject
     private PlayerController playerController; // Optional reference for player-specific logic
     Animator animator;
@@ -18,50 +18,39 @@ public class TouchingDirections : MonoBehaviour
     RaycastHit2D[] wallHits = new RaycastHit2D[5];
     RaycastHit2D[] ceilingHits = new RaycastHit2D[5];
 
-    [SerializeField]
-    private bool _isGrounded;
+    [SerializeField] private bool isGrounded;
     public bool IsGrounded
     {
-        get
+        get { return isGrounded; }
+        private set
         {
-            return _isGrounded;
-        }
-        private set {
-            _isGrounded = value;
-            animator.SetBool(AnimationStrings.isGrounded, value);
+            isGrounded = value;
+            if (animator != null) animator.SetBool(AnimationStrings.isGrounded, value);
         }
     }
-
-    [SerializeField]
-    private bool _isOnWall;
+    [SerializeField] private bool isOnWall;
     public bool IsOnWall
     {
-        get
-        {
-            return _isOnWall;
-        }
+        get { return isOnWall; }
         private set
         {
-            _isOnWall = value;
-            animator.SetBool(AnimationStrings.isOnWall, value);
+            isOnWall = value;
+            if (animator != null) animator.SetBool(AnimationStrings.isOnWall, value);
         }
     }
-    [SerializeField]
-    private bool _isOnCeiling;
-    private Vector2 wallCheckDirection => gameObject.transform.localScale.x > 0 ? Vector2.right :Vector2.left;
-
+    [SerializeField] private bool isOnCeiling;
     public bool IsOnCeiling
     {
-        get
-        {
-            return _isOnCeiling;
-        }
+        get { return isOnCeiling; }
         private set
         {
-            _isOnCeiling = value;
-            animator.SetBool(AnimationStrings.isOnCeiling, value);
+            isOnCeiling = value;
+            if (animator != null) animator.SetBool(AnimationStrings.isOnCeiling, value);
         }
     }
+
+    private Vector2 wallCheckDirection => gameObject.transform.localScale.x > 0 ? Vector2.right : Vector2.left;
+
     private void Awake()
     {
         touchingCol = GetComponent<CapsuleCollider2D>();
@@ -71,8 +60,12 @@ public class TouchingDirections : MonoBehaviour
         {
             Debug.LogError($"No CapsuleCollider2D found on {gameObject.name}!");
         }
+        if (playerController != null && playerController.ActiveCollider != null)
+        {
+            ceilingDistance = playerController.ActiveCollider.size.y + 0.05f; // 动态调整
+        }
     }
-    
+
     void FixedUpdate()
     {
         CapsuleCollider2D activeCollider = touchingCol; // Default to local collider
@@ -98,4 +91,3 @@ public class TouchingDirections : MonoBehaviour
         }
     }
 }
-

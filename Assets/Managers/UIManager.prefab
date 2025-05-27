@@ -47,8 +47,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   damageTextPrefab: {fileID: 7642517698505386359, guid: 555f5993ccb46be4cbc4852d7eff6f3e, type: 3}
   healthTextPrefab: {fileID: 7642517698505386359, guid: 14f67cff4f60dd445818c5af83f0d64c, type: 3}
+  manaTextPrefab: {fileID: 7642517698505386359, guid: 0a7658c5a4b81dc438d8abde08d3a667, type: 3}
   gameCanvas: {fileID: 0}
   player: {fileID: 0}
+  manaTextInterval: 2
+  manaTextThreshold: 5
 --- !u!114 &4166550518604735592
 MonoBehaviour:
   m_ObjectHideFlags: 0
